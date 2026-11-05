@@ -1,58 +1,86 @@
 {
-  "name": "y",
+  "name": "scheduler",
   "version": "1.0.0",
-  "description": "Sistema de agendamento com MySQL",
+  "description": "Sistema de agendamento de atendimentos com NestJS, Prisma e MariaDB",
+  "private": true,
   "main": "dist/main.js",
-  "prisma": {
-    "schema": "./src/prisma/schema.prisma",
-    "seed": "tsx src/prisma/seed.ts"
-  },
   "scripts": {
     "build": "nest build",
     "start": "nest start",
     "dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "dependencies": {
     "@nestjs/common": "^12.2.0",
     "@nestjs/core": "^12.2.0",
+    "@nestjs/mapped-types": "^12.0.1",
     "@nestjs/platform-express": "^12.2.0",
     "@nestjs/serve-static": "^12.0.0",
+    "@nestjs/throttler": "^6.7.1",
     "@prisma/adapter-mariadb": "^7.10.0",
-    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^18.0.9",
     "express": "^5.3.0",
     "express-session": "^1.18.2",
-    "mysql2": "^3.14.3",
-    "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^12.0.10",
     "@nestjs/testing": "^12.2.0",
-    "@swc/cli": "^0.8.2",
-    "@swc/core": "^1.16.18",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.19.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^26.6.5",
-    "@types/pg": "^8.23.1",
-    "dotenv": "^18.0.8",
+    "@types/supertest": "^7.2.1",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.14.0",
+    "jest": "^30.5.2",
+    "prettier": "^3.9.10",
     "prisma": "^7.10.1",
-    "swc-loader": "^0.2.7",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.23.15",
-    "typescript": "~6.0.3"
+    "supertest": "^7.3.1",
+    "ts-jest": "^29.4.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": ".",
+    "roots": [
+      "<rootDir>/src",
+      "<rootDir>/test"
+    ],
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.spec.json"
+        }
+      ]
+    },
+    "testEnvironment": "node"
+  },
+  "engines": {
+    "node": ">=24"
   },
   "author": "",
-  "license": "ISC",
-  "engines": {
-    "runtime": {
-      "name": "node",
-      "version": "26.12.1",
-      "onFail": "download"
-    }
-  }
+  "license": "MIT"
 }

@@ -1,49 +1,49 @@
 services:
   db:
     image: mariadb:lts
-    container_name: mariadb-server
-    ports:
-      - "3306:3306"
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
-      MYSQL_USER: "${DB_USER}"
-      MYSQL_ROOT_PASSWORD: "${ADMIN_PASSWORD}"
-      MYSQL_DATABASE: "mydb"
-      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    # Sem "ports": o app acessa o banco pela rede interna do Compose.
+    # Para acessar do seu computador, adicione: ports: ["127.0.0.1:3306:3306"]
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./src/prisma:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 0.0.0.0 -u root -pArdmin321 --silent || exit 1"]
-      interval: 30s
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
       timeout: 5s
-      retries: 20
+      retries: 10
 
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-    env_file:
-      - .env
+  # Aplica as migrations e termina. O app só sobe depois que ele conclui com sucesso.
+  migrate:
+    build:
+      context: .
+      target: build
     environment:
-      DB_USER: "${DB_USER}"
-      DB_PASSWORD: "${DB_PASSWORD}"
-      DB_NAME: "${DB_NAME}"
-      DB_HOST: "db"
-      DB_PORT: "3306"
-      ADMIN_USER: "${ADMIN_USER}"
-      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
-      DATABASE_URL: "${DATABASE_URL}"
-      SESSION_SECRET: "${SESSION_SECRET}"
-      PORT: "3000"
-      NODE_ENV: development
-    command: sh -c "pnpm exec prisma db push --schema=prisma/schema.prisma && pnpm start:prod"
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@db:3306/${DB_NAME}
+    command: pnpm exec prisma migrate deploy
     depends_on:
       db:
         condition: service_healthy
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@db:3306/${DB_NAME}
+      SESSION_SECRET: ${SESSION_SECRET}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   mysql_data:

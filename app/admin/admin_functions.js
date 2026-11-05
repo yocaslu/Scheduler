@@ -134,7 +134,7 @@ export function montarSelectsGrupo(inicio = '', fim = '', ocupados = []) {
   atualizarFimGrupo();
 }
 
-export async function carregarHorariosGrupo(data, inicio = '', fim = '') {
+export async function carregarHorariosGrupo(data, inicio = '', fim = '', proprios = []) {
   window.horariosOcupadosGrupo = new Set();
   if (!data) { montarSelectsGrupo(inicio, fim, []); return; }
   try {
@@ -145,7 +145,7 @@ export async function carregarHorariosGrupo(data, inicio = '', fim = '') {
       try { x = JSON.parse(texto); } catch (err) { throw new Error('Erro na resposta de horários do servidor.'); }
     }
     if (!r.ok) throw Error(x.mensagem || 'Erro ao carregar horários.');
-    window.horariosOcupadosGrupo = new Set(x.horariosOcupados || []);
+    window.horariosOcupadosGrupo = new Set((x.horariosOcupados || []).filter(h => !proprios.includes(h)));
     montarSelectsGrupo(inicio, fim, [...window.horariosOcupadosGrupo]);
   } catch (e) {
     if ($('mensagemHorariosGrupo')) $('mensagemHorariosGrupo').textContent = e.message;
@@ -184,7 +184,7 @@ export async function verificar() {
     
     if (!r.ok) {
       if (r.status === 401 || r.status === 403) {
-        location.href = '/login.html';
+        location.href = '/';
       }
       return false;
     }
@@ -401,18 +401,6 @@ export async function abrirCidadao(id) {
   const x = await r.json();
   if (!r.ok) return alert(x.mensagem || 'Erro ao carregar dados do cidadão.');
 
-  const cidadaoObj = d.cidadao || d; 
-const nomeCidadao = cidadaoObj?.nome || 'Cidadão não identificado';
-const emailCidadao = cidadaoObj?.email || '—';
-if ($('detalheCidadao')) {
-  $('detalheCidadao').innerHTML = `
-    <div class="card">
-      <b>${esc(nomeCidadao)}</b><br>
-      E-mail: ${esc(emailCidadao)}
-    </div>
-  `;
-}
-  
   if ($('senhaCidadaoId')) $('senhaCidadaoId').value = id;
   if ($('detalheCidadao')) {
     $('detalheCidadao').innerHTML = `<div class="card"><b>${esc(x.cidadao.nome)}</b><br>E-mail: ${esc(x.cidadao.email)}<br>Telefone: ${esc(x.cidadao.telefone || '—')}<br>Cadastro: ${esc(x.cidadao.criado_em)}</div>`;
@@ -437,7 +425,7 @@ export async function alterarSenha(e) {
     const r = await fetch(`/api/admin/cidadaos/${id}/senha`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ novaSenha })
+      body: JSON.stringify({ senha: novaSenha })
     });
     const x = await r.json();
     if (!r.ok) throw new Error(x.mensagem || 'Erro ao alterar senha.');
@@ -481,8 +469,24 @@ export function abrirModalAtendimento(a = null) {
   $('modalAtendimento')?.classList.add('aberto');
 }
 
-export function editar(id) { const a = cache.find(x => x.id === id); if (a) abrirModalAtendimento(a); }
-export function editarPendente(id) { const a = cache.find(x => x.id === id); if (a) abrirModalAtendimento(a); }
+export async function editar(id) {
+  const a = cache.find(x => x.id === id);
+  if (!a) return;
+  abrirModalAtendimento(a);
+  if (a.tipo_atendimento !== 'grupo') return;
+
+  const d = await carregarDetalhesGrupo(id);
+  if ($('participantes')) $('participantes').innerHTML = '';
+  d.participantes.forEach((p, i) => adicionarParticipante(p.nome, p.telefone || '', i === 0));
+  if (!d.participantes.length) adicionarParticipante('', '', true);
+
+  // blocosEntre(inicio, fim) não inclui o fim, então o fim é o horário seguinte ao último bloco.
+  const inicio = d.blocos[0] || '';
+  const ultimo = HORARIOS.indexOf(d.blocos[d.blocos.length - 1]);
+  const fim = ultimo >= 0 ? HORARIOS[ultimo + 1] || '' : '';
+  await carregarHorariosGrupo(a.data.slice(0, 10), inicio, fim, d.blocos);
+}
+export function editarPendente(id) { return editar(id); }
 
 export function abrirUsuario(u = null) {
   if ($('tituloUsuario')) $('tituloUsuario').textContent = u ? 'Editar usuário' : 'Criar usuário';

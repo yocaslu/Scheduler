@@ -11,7 +11,7 @@
 <script>
 async function carregar(){
  const r=await fetch('/api/cidadao/meus-agendamentos'); 
- if(r.status===401){location.href='/login.html';return;
+ if(r.status===401){location.href='/';return;
 } 
  
  const d=await r.json();
@@ -30,5 +30,5 @@ function escapeHtml(s){
     d.textContent=s;return d.innerHTML;
 }
   
-  document.getElementById('sair').onclick=async()=>{await fetch('/api/logout',{method:'POST'});location.href='/login.html';}; carregar();
+  document.getElementById('sair').onclick=async()=>{await fetch('/api/logout',{method:'POST'});location.href='/';}; carregar();
 </script></body></html>

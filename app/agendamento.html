@@ -63,7 +63,7 @@ async function carregarConta() {
   try {
     const r = await fetch('/api/cidadao/me');
     if (r.status === 401) {
-      location.href = '/login.html';
+      location.href = '/';
       return false;
     }
     const x = await r.json();

@@ -1,4 +1,8 @@
 node_modules
-npm-debug.log
-data_registro
 dist
+coverage
+.git
+.env
+.pnpm-store
+*.md
+npm-debug.log
