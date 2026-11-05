@@ -2,39 +2,25 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "target": "ES2022",                // Mudado de esnext para ES2022 (mais estável em memória)
-    "noImplicitOverride": false,
-    "ignoreDeprecations": "6.0",
+    "target": "ES2022",
     "types": ["node"],
-    "strict": true,
-    "esModuleInterop": true,
-    
-    // OTIMIZAÇÕES CRUCIAIS PARA ECONOMIZAR RAM:
-    "noEmit": false,                   // CORRIGIDO: O NestJS precisa emitir arquivos para a pasta dist
-    "allowJs": false,                  // Desativado se o seu projeto for puramente TypeScript
-    "checkJs": false,                  // Desativado: Evita validar a semântica de arquivos JS
-    "declaration": false,              // Desativado: Não gera arquivos .d.ts de definição em produção
-    "sourceMap": false,                // Desativado: Remove os mapas de código pesados da RAM
-    "incremental": false,              // Desativado: Evita criar arquivos de cache pesados em memória no build
-
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "skipLibCheck": true,              // Mantido (crucial para ignorar node_modules)
-    
-    // Regras de validação estrita (Mantidas)
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": true,
-    "forceConsistentCasingInFileNames": false,
+    "removeComments": true,
+    "sourceMap": false,
+    "incremental": false,
+    "declaration": false,
+
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }
