@@ -12,39 +12,4 @@
 </form>
 <div id="linkCadastro"><hr><p>Ainda não possui conta?</p><button type="button" onclick="location.href='/cadastro.html'">Criar conta de cidadão</button></div>
 </div>
-<script>
-const form=document.getElementById('formLogin');
-const login=document.getElementById('login');
-const senha=document.getElementById('senha');
-const mensagem=document.getElementById('mensagem');
-
-form.addEventListener('submit',async e=>{
-  e.preventDefault();
-  mensagem.textContent='';
-  mensagem.className='';
-
-  const loginValor=login.value.trim();
-  const senhaValor=senha.value;
-
-  if(!loginValor || !senhaValor){
-    mensagem.className='erro';
-    mensagem.textContent='Preencha o login/e-mail e a senha.';
-    return;
-  }
-
-  try{
-    const r=await fetch('/api/login',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({login:loginValor,senha:senhaValor})
-    });
-
-    const d=await r.json();
-    if(!r.ok) throw new Error(d.mensagem||'Usuário ou senha inválidos.');
-    location.href=d.redirect;
-  }catch(err){
-    mensagem.className='erro';
-    mensagem.textContent=err.message;
-  }
-});
-</script></body></html>
+<script type="module" src="js/login.js"></script></body></html>
