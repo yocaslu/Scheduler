@@ -1,29 +1,27 @@
-FROM node:24-alpine
+# ---------- Estágio de build ----------
+FROM node:24-alpine AS build
 WORKDIR /app
 
-#Istalar pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 
-#Ler os arquivos de depencencias e instalar elas
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
-RUN pnpm install 
+COPY prisma ./prisma
+COPY prisma.config.ts tsconfig.json tsconfig.build.json nest-cli.json ./
+COPY src ./src
+RUN pnpm exec prisma generate && pnpm run build
 
-COPY ./prisma ./prisma/
-# link falso só para ter algo e dar tempo de rodar o resto
-RUN DATABASE_URL="postgresql://mock:mock@localhost:5432/mock" npx prisma generate
+# ---------- Imagem final ----------
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=production
 
-#Criar cache para o pnpm build, pois demora
-COPY src/ ./src/
-COPY prisma7.config.ts tsconfig.json pnpm-lock.yaml pnpm-workspace.yaml ./
-ENV NEXT_DISABLE_SOURCEMAPS=1
-ENV NEXT_CPU_COUNT=1
-RUN pnpm run build
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/dist ./dist
+COPY --chown=node:node package.json ./
+COPY --chown=node:node app ./app
 
-COPY app/ ./app/
-
-#Copiar os demais
-
-
+USER node
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma generate && pnpm start:prod"]
+CMD ["node", "dist/main"]
