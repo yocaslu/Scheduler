@@ -73,6 +73,12 @@ describe('Rotas (e2e)', () => {
     return agente;
   }
 
+  it('expediente é público e vem da mesma lista do backend', async () => {
+    const r = await request(app.getHttpServer()).get('/api/agendamentos/expediente').expect(200);
+    expect(r.body.horarios[0]).toBe('09:00');
+    expect(r.body.horarios).toHaveLength(14);
+  });
+
   it('pendências exigem login', async () => {
     const r = await request(app.getHttpServer()).get('/api/admin/pendencias');
     expect(r.status).toBe(401);
