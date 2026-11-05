@@ -1,12 +1,20 @@
-node_modules
-# Keep environment variables out of version control
+# Dependências e build
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.pnpm-store/
+
+# Variáveis de ambiente (use .env.example como modelo)
 .env
 
+# Código gerado pelo `prisma generate`
+generated/
+src/prisma-client/
+src/prisma/client/
 
+# Editor e sistema
 *.Identifier
-
-/app/generated/prisma
-
-/generated/prisma
-
-*.Identifier
+.DS_Store
+.vscode/
+.idea/
