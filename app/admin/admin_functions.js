@@ -15,6 +15,7 @@ let papel = '';
 let cache = []; // Agendamentos exibidos na aba atual (para abrir a edição)
 let cacheUsuarios = [];
 let ocupadosGrupo = new Set(); // Horários ocupados na data do atendimento em grupo
+let carregamentosGrupo = 0; // Contador para descartar respostas fora de ordem
 
 /** AAAA-MM-DD -> DD/MM/AAAA */
 const br = (v) => {
@@ -282,16 +283,28 @@ function montarSelectsGrupo(inicio = '', fim = '') {
  * próprio agendamento, que não contam como ocupados.
  */
 export async function carregarHorariosGrupo(data, inicio = '', fim = '', proprios = []) {
-  ocupadosGrupo = new Set();
+  // Esvazia os selects enquanto carrega: opções de um modal anterior não podem ser
+  // escolhidas antes de saber quais horários desta data estão ocupados.
+  $('grupoInicio').innerHTML = '';
+  $('grupoFim').innerHTML = '';
+  $('mensagemHorariosGrupo').textContent = 'Carregando horários...';
+
+  const pedido = ++carregamentosGrupo;
+  let ocupados = new Set();
+  let erro = '';
   if (data) {
     try {
       const x = await api('/api/admin/horarios?data=' + encodeURIComponent(data));
-      ocupadosGrupo = new Set(x.horariosOcupados.filter((h) => !proprios.includes(h)));
+      ocupados = new Set(x.horariosOcupados.filter((h) => !proprios.includes(h)));
     } catch (e) {
-      $('mensagemHorariosGrupo').textContent = e.message;
+      erro = e.message;
     }
   }
+  // Se a data mudou enquanto esperava, esta resposta já está desatualizada.
+  if (pedido !== carregamentosGrupo) return;
+  ocupadosGrupo = ocupados;
   montarSelectsGrupo(inicio, fim);
+  if (erro) $('mensagemHorariosGrupo').textContent = erro;
 }
 
 // --- USUÁRIOS DO PAINEL ---
