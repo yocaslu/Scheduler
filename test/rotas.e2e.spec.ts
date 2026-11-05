@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
+import session from 'express-session';
 import { getStorageToken, ThrottlerStorageService } from '@nestjs/throttler';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -54,7 +55,8 @@ describe('Rotas (e2e)', () => {
       .compile();
 
     app = modulo.createNestApplication();
-    configurarApp(app);
+    // Sessões em memória: o Prisma deste teste é falso e não tem a tabela sessoes.
+    configurarApp(app, { store: new session.MemoryStore() });
     await app.init();
   });
 
