@@ -52,31 +52,7 @@ if ($('editData')) $('editData').addEventListener('change', () => { if ($('editT
 if ($('grupoInicio')) $('grupoInicio').addEventListener('change', atualizarFimGrupo);
 
 // Botão Sair
-if ($('sair')) $('sair').onclick = async () => { await fetch('/api/logout', { method: 'POST' }); location.href = '/login.html'; };
+if ($('sair')) $('sair').onclick = async () => { await fetch('/api/logout', { method: 'POST' }); location.href = '/'; };
 
 // Inicialização da página
 verificar().then(ok => { if (ok) carregar(); });
-
-// No final do seu admin.mjs
-if (typeof window !== 'undefined') {
-  window.salvarAtendimento = salvarAtendimento;
-  window.editar = editar;
-  window.editarPendente = editarPendente;
-  window.abrirCidadao = abrirCidadao;
-  window.editarUsuario = editarUsuario;
-  window.excluirUsuario = excluirUsuario;
-  window.salvarUsuario = salvarUsuario;
-  window.alterarSenha = alterarSenha;
-}
-
-if ($('busca')) {
-  $('busca').addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(carregar, 250);
-  });
-}
-
-// Escuta alterações nos seletores de Data, Atendimento e Status
-if ($('filtroData')) $('filtroData').addEventListener('change', carregar);
-if ($('filtroAtendimento')) $('filtroAtendimento').addEventListener('change', carregar);
-if ($('filtroStatus')) $('filtroStatus').addEventListener('change', carregar);
