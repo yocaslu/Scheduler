@@ -47,7 +47,7 @@ Para usar só o banco do Docker, descomente a linha `ports` do serviço `db` no 
 | --- | --- |
 | `pnpm dev` | Sobe a API com recarga automática |
 | `pnpm test` | Roda os testes unitários e e2e (não precisam de banco) |
-| `pnpm lint` | Verifica o código com ESLint |
+| `pnpm lint` | Verifica o backend e o frontend com ESLint |
 | `pnpm format` | Formata o código com Prettier |
 | `pnpm exec prisma migrate dev --name <nome>` | Cria uma migration depois de alterar `prisma/schema.prisma` |
 
@@ -75,8 +75,10 @@ src/
   common/         datas, horários do expediente, filtro de erros
 test/             testes e2e
 prisma/           schema e migrations
-app/              frontend (HTML, CSS e JS)
+app/              frontend (HTML, CSS e módulos JS em app/js e app/admin)
 ```
+
+As sessões de login ficam na tabela `sessoes` do banco, então reiniciar o app não desconecta ninguém. Sessões expiradas são apagadas a cada 15 minutos.
 
 ## API
 
@@ -85,6 +87,7 @@ Todas as rotas começam com `/api`.
 | Método e rota | Acesso |
 | --- | --- |
 | `POST /login`, `POST /logout` | Público |
+| `GET /agendamentos/expediente` (horários do dia) | Público |
 | `GET /agendamentos/disponiveis?data=AAAA-MM-DD` | Público |
 | `POST /agendamentos` | Cidadão |
 | `POST /cidadao/cadastro` | Público |
