@@ -47,9 +47,27 @@ Para usar só o banco do Docker, descomente a linha `ports` do serviço `db` no 
 | --- | --- |
 | `pnpm dev` | Sobe a API com recarga automática |
 | `pnpm test` | Roda os testes unitários e e2e (não precisam de banco) |
+| `pnpm test:navegador` | Roda os testes de navegador (precisam do app rodando; veja abaixo) |
 | `pnpm lint` | Verifica o backend e o frontend com ESLint |
 | `pnpm format` | Formata o código com Prettier |
 | `pnpm exec prisma migrate dev --name <nome>` | Cria uma migration depois de alterar `prisma/schema.prisma` |
+
+## Testes de navegador
+
+Os testes em `e2e/` abrem as telas no Chromium com o [Playwright](https://playwright.dev) e percorrem o uso real: o cidadão se cadastra, agenda e cancela; o administrador cria atendimentos (único e em grupo), gerencia usuários e troca a senha de um cidadão; o balconista vê só o que pode. Erros de JavaScript ou alertas na tela reprovam o teste.
+
+Eles precisam da aplicação rodando e usam o administrador do `.env`:
+
+```bash
+docker compose up --build -d
+pnpm exec playwright install --with-deps chromium   # só na primeira vez
+pnpm test:navegador
+```
+
+- Cada execução cria dados com nomes únicos numa data futura sorteada, então dá para rodar várias vezes no mesmo banco. Não rode contra o banco de produção.
+- Para testar outro endereço, use `BASE_URL=http://servidor:3000 pnpm test:navegador`.
+- O login aceita 5 tentativas por minuto por IP; espere 1 minuto entre duas execuções seguidas.
+- Se algo falhar, `pnpm exec playwright show-report` abre o relatório com captura de tela e trace.
 
 ## Banco já existente (criado com `prisma db push`)
 
@@ -73,7 +91,8 @@ src/
   usuarios/       usuários da equipe
   prisma/         PrismaService
   common/         datas, horários do expediente, filtro de erros
-test/             testes e2e
+test/             testes e2e da API (Jest + Supertest)
+e2e/              testes de navegador (Playwright)
 prisma/           schema e migrations
 app/              frontend (HTML, CSS e módulos JS em app/js e app/admin)
 ```
