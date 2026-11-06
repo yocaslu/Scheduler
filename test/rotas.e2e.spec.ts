@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
+import session from 'express-session';
 import { getStorageToken, ThrottlerStorageService } from '@nestjs/throttler';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -54,7 +55,8 @@ describe('Rotas (e2e)', () => {
       .compile();
 
     app = modulo.createNestApplication();
-    configurarApp(app);
+    // Sessões em memória: o Prisma deste teste é falso e não tem a tabela sessoes.
+    configurarApp(app, { store: new session.MemoryStore() });
     await app.init();
   });
 
@@ -70,6 +72,12 @@ describe('Rotas (e2e)', () => {
     await agente.post('/api/login').send({ login, senha }).expect(200);
     return agente;
   }
+
+  it('expediente é público e vem da mesma lista do backend', async () => {
+    const r = await request(app.getHttpServer()).get('/api/agendamentos/expediente').expect(200);
+    expect(r.body.horarios[0]).toBe('09:00');
+    expect(r.body.horarios).toHaveLength(14);
+  });
 
   it('pendências exigem login', async () => {
     const r = await request(app.getHttpServer()).get('/api/admin/pendencias');

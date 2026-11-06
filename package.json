@@ -16,7 +16,7 @@
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"app/**/*.{js,mjs}\""
   },
   "dependencies": {
     "@nestjs/common": "^12.2.0",

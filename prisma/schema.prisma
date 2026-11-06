@@ -100,3 +100,12 @@ enum agendamentos_status {
   pedido_atendido
   pedido_pendente
 }
+
+/// Sessões de login (express-session). Ficam no banco para sobreviver a reinícios.
+model sessoes {
+  id        String   @id @db.VarChar(128)
+  dados     String   @db.Text
+  expira_em DateTime @db.DateTime(0)
+
+  @@index([expira_em], map: "idx_sessao_expira_em")
+}

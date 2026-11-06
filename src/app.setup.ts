@@ -1,10 +1,17 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import session from 'express-session';
+import session, { Store } from 'express-session';
+import { PrismaSessionStore } from './auth/prisma-session.store';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 import { obrigatoria } from './config/env';
+import { PrismaService } from './prisma/prisma.service';
+
+export interface OpcoesApp {
+  /** Store de sessão. Por padrão as sessões ficam no banco (tabela `sessoes`). */
+  store?: Store;
+}
 
 /** Configuração compartilhada entre o main.ts e os testes e2e. */
-export function configurarApp(app: INestApplication) {
+export function configurarApp(app: INestApplication, opcoes: OpcoesApp = {}) {
   app.setGlobalPrefix('api');
 
   app.useGlobalPipes(
@@ -23,6 +30,7 @@ export function configurarApp(app: INestApplication) {
   app.use(
     session({
       name: 'scheduler.sid',
+      store: opcoes.store ?? new PrismaSessionStore(app.get(PrismaService)),
       secret: obrigatoria('SESSION_SECRET'),
       resave: false,
       saveUninitialized: false,

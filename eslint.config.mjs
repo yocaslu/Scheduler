@@ -6,8 +6,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
-  // O frontend em app/ é JavaScript de navegador sem build; fica fora por enquanto.
-  { ignores: ['dist/', 'node_modules/', 'coverage/', 'app/', 'eslint.config.mjs'] },
+  { ignores: ['dist/', 'node_modules/', 'coverage/', 'eslint.config.mjs'] },
   eslint.configs.recommended,
   tseslint.configs.recommended,
   prettier,
@@ -18,6 +17,14 @@ export default defineConfig(
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    // Frontend: módulos JavaScript que rodam direto no navegador, sem build.
+    files: ['app/**/*.js', 'app/**/*.mjs'],
+    languageOptions: {
+      sourceType: 'module',
+      globals: { ...globals.browser },
     },
   },
 );

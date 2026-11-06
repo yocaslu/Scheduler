@@ -4,12 +4,20 @@ import { Request } from 'express';
 import { Papel } from '../auth/papel.enum';
 import { Papeis } from '../auth/papeis.decorator';
 import { PapeisGuard } from '../auth/papeis.guard';
+import { HORARIOS } from '../common/horarios';
 import { AgendamentosService } from './agendamentos.service';
 import { CriarAgendamentoDto } from './dto/criar-agendamento.dto';
 
 @Controller('agendamentos')
 export class AgendamentosController {
   constructor(private readonly agendamentos: AgendamentosService) {}
+
+  // GET /api/agendamentos/expediente (público): blocos de horário do dia.
+  // O frontend lê daqui em vez de manter uma cópia da lista.
+  @Get('expediente')
+  expediente() {
+    return { horarios: HORARIOS };
+  }
 
   // GET /api/agendamentos/disponiveis?data=AAAA-MM-DD (público)
   @Get('disponiveis')
