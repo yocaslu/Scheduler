@@ -1,0 +1,20 @@
+# Sobreposição para desenvolvimento: sem o proxy reverso, com o app e o banco só no loopback.
+# Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# "!override" e "!reset" exigem Docker Compose >= 2.24.4.
+services:
+  db:
+    ports:
+      - "127.0.0.1:3306:3306"
+
+  app:
+    # Acesso direto em http://localhost:3000, sem HTTPS: cookie sem Secure e sem trust proxy.
+    environment:
+      COOKIE_SECURE: "false"
+    ports:
+      - "127.0.0.1:3000:3000"
+    # Fora da rede do proxy: não exige a rede externa scheduler-borda na máquina de desenvolvimento.
+    networks: !override
+      - default
+
+networks:
+  borda: !reset {}

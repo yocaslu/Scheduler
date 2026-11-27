@@ -1,5 +1,17 @@
+# Produção: o app fica atrás do proxy reverso HTTPS compartilhado (repositório "caddy"), que publica
+# a 443 e encaminha agendamentos.caieiras.sp.gov.br para scheduler-app:3000 pela rede scheduler-borda.
+# Desenvolvimento: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+# Rotação dos logs dos contêineres (sem isso o json-file cresce sem limite no disco do servidor).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
+    logging: *logging
     image: mariadb:lts
     restart: unless-stopped
     environment:
@@ -7,8 +19,8 @@ services:
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASSWORD}
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    # Sem "ports": o app acessa o banco pela rede interna do Compose.
-    # Para acessar do seu computador, adicione: ports: ["127.0.0.1:3306:3306"]
+    # Sem "ports" e só na rede "default": o banco nunca entra na rede do proxy.
+    # Para acessar do seu computador, use a sobreposição docker-compose.dev.yml.
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -19,6 +31,7 @@ services:
 
   # Aplica as migrations e termina. O app só sobe depois que ele conclui com sucesso.
   migrate:
+    logging: *logging
     build:
       context: .
       target: build
@@ -29,7 +42,10 @@ services:
       db:
         condition: service_healthy
 
+  # Sem "ports": só o proxy reverso o alcança, pela rede "borda". Com COOKIE_SECURE=true o app confia
+  # no X-Forwarded-For do vizinho imediato (trust proxy 1), então nunca pode ficar acessível diretamente.
   app:
+    logging: *logging
     build: .
     restart: unless-stopped
     environment:
@@ -37,13 +53,27 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       ADMIN_USER: ${ADMIN_USER}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      PORT: 3000
-    ports:
-      - "3000:3000"
+      # Fixo (não vem do .env): em produção o app está sempre atrás do proxy HTTPS, então o cookie de
+      # sessão é Secure e o trust proxy fica ligado. Só a sobreposição de desenvolvimento usa "false".
+      COOKIE_SECURE: "true"
+    networks:
+      default:
+      borda:
+        # Nome único na borda: o proxy está nas redes de todos os sistemas, e um "app" de outro
+        # sistema colidiria com este. O Caddyfile do proxy usa scheduler-app:3000.
+        aliases:
+          - scheduler-app
     depends_on:
       migrate:
         condition: service_completed_successfully
 
 volumes:
   mysql_data:
+
+networks:
+  # Rede entre o proxy reverso (outro repositório) e o app: só o app entra nela. Criada uma vez na VM,
+  # fora dos dois compose (docker network create --internal scheduler-borda), para que nenhum "down" a
+  # apague e a ordem de subida não importe. REDE_BORDA só existe para testes; em produção vale o padrão.
+  borda:
+    external: true
+    name: ${REDE_BORDA:-scheduler-borda}
