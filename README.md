@@ -10,24 +10,45 @@ Sistema de agendamento de atendimentos com três perfis:
 
 Backend em NestJS + Prisma + MariaDB; frontend em HTML e JavaScript servido pelo próprio Nest.
 
-## Rodar com Docker
+## Rodar com Docker (desenvolvimento)
 
-Requisito: Docker com Compose v2 (Docker Desktop no Windows ou macOS).
+Requisito: Docker com Compose v2.24.4 ou mais novo (Docker Desktop no Windows ou macOS).
 
 ```bash
 git clone https://github.com/mucamonter/Scheduler.git
 cd Scheduler
 cp .env.example .env      # preencha as senhas e o SESSION_SECRET
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
 Acesse <http://localhost:3000> e entre com `ADMIN_USER` e `ADMIN_PASSWORD`.
 
 O Compose sobe três serviços, nesta ordem:
 
-1. `db`: MariaDB, com os dados no volume `mysql_data`.
+1. `db`: MariaDB, com os dados no volume `mysql_data` (em `127.0.0.1:3306` só com a sobreposição de desenvolvimento).
 2. `migrate`: aplica as migrations de `prisma/migrations` e termina.
 3. `app`: a aplicação na porta 3000.
+
+## Produção (atrás do proxy reverso)
+
+Em produção, o `docker-compose.yml` é usado sozinho. Nenhum serviço publica porta. O HTTPS fica a cargo do proxy reverso Caddy, compartilhado com os outros sistemas da VM, que tem repositório próprio (`caddy`). Ele encaminha `https://agendamentos.caieiras.sp.gov.br` para o `app`, com um certificado do AD CS da Prefeitura. O endereço só é confiável nas máquinas do domínio.
+
+| Item | Valor |
+| --- | --- |
+| Rede com o proxy | `scheduler-borda`, externa e `--internal`. Só o `app` entra nela, com o alias `scheduler-app` |
+| Destino no proxy | `scheduler-app:3000` |
+| Cookie de sessão | `Secure`, com `trust proxy` ligado (`COOKIE_SECURE` é fixo em `true` no compose de produção) |
+
+Instalação na VM:
+
+1. Crie a rede uma única vez, antes de subir: `docker network create --internal scheduler-borda`. Sem ela, o compose recusa subir o `app`.
+2. Instale o proxy e o certificado do scheduler (`README.md` e `docs/certificado-adcs.md` do repositório `caddy`).
+3. Aqui: `cp .env.example .env`, preencha e rode `docker compose up -d --build`.
+
+Regras de segurança, verificadas por `pnpm test:compose`:
+
+- Nunca acrescente `ports` aos serviços no `docker-compose.yml`, nem ponha o `db` ou o `migrate` na rede `borda`. Com `trust proxy`, o app confia no `X-Forwarded-For` de quem está imediatamente antes dele. Um acesso direto, ou outro contêiner nessa rede, poderia forjar o IP e contornar o limite de 5 tentativas de login por minuto por IP.
+- Para conferir quem está na rede: `docker network inspect scheduler-borda --format '{{range .Containers}}{{.Name}} {{end}}'`. O esperado é só o contêiner do proxy e o `scheduler-app-1`.
 
 ## Rodar em desenvolvimento
 
@@ -41,12 +62,13 @@ pnpm exec prisma generate
 pnpm dev
 ```
 
-Para usar só o banco do Docker, descomente a linha `ports` do serviço `db` no `docker-compose.yml` e rode `docker compose up db`.
+Para usar só o banco do Docker: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up db` (fica em `127.0.0.1:3306`).
 
 | Comando | O que faz |
 | --- | --- |
 | `pnpm dev` | Sobe a API com recarga automática |
 | `pnpm test` | Roda os testes unitários e e2e (não precisam de banco) |
+| `pnpm test:compose` | Confere a fronteira com o proxy nos arquivos do Compose (exige Docker e jq) |
 | `pnpm lint` | Verifica o backend e o frontend com ESLint |
 | `pnpm format` | Formata o código com Prettier |
 | `pnpm exec prisma migrate dev --name <nome>` | Cria uma migration depois de alterar `prisma/schema.prisma` |
